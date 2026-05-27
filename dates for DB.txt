@@ -1,0 +1,93 @@
+USE clinica;
+
+-- Asegurar que las inserciones se ejecuten de forma limpia
+START TRANSACTION;
+
+-- 1. Catálogos Base de Configuración y Roles
+INSERT INTO `rolusuario` (`idRol`, `nombre`) VALUES
+(1, 'Administrador'),
+(2, 'Recepcionista'),
+(3, 'Médico');
+
+INSERT INTO `tipoaccionaud` (`idTipoAccion`, `nombre`) VALUES
+(1, 'Creación de Cita'),
+(2, 'Cancelación de Cita'),
+(3, 'Modificación de Datos');
+
+INSERT INTO `canalnotificacion` (`idCanal`, `nombre`) VALUES
+(1, 'WhatsApp'),
+(2, 'Correo Electrónico'),
+(3, 'SMS');
+
+INSERT INTO `tiponotificacion` (`idTipoNotif`, `nombre`) VALUES
+(1, 'Recordatorio 24h'),
+(2, 'Confirmación de Agendamiento'),
+(3, 'Aviso de Cancelación');
+
+INSERT INTO `estadocita` (`idEstadoCita`, `nombre`) VALUES
+(1, 'Programada'),
+(2, 'Confirmada'),
+(3, 'Completada'),
+(4, 'Cancelada');
+
+INSERT INTO `estadofranja` (`idEstadoFranja`, `nombre`) VALUES
+(1, 'Disponible'),
+(2, 'Asignada'),
+(3, 'Bloqueada');
+
+-- 2. Infraestructura y Personal Médico
+INSERT INTO `especialidad` (`idEspecialidad`, `nombre`) VALUES
+(1, 'Medicina General'),
+(2, 'Pediatría'),
+(3, 'Cardiología');
+
+INSERT INTO `consultorio` (`idConsultorio`, `nombre`, `ubicacion`) VALUES
+(1, 'Consultorio 101', 'Piso 1 - Ala Norte'),
+(2, 'Consultorio 102', 'Piso 1 - Ala Norte'),
+(3, 'Consultorio 204', 'Piso 2 - Especialidades');
+
+INSERT INTO `medico` (`idMedico`, `nombre`, `idEspecialidad`) VALUES
+(1, 'Dr. Carlos Mendoza', 1),
+(2, 'Dra. Diana Restrepo', 2),
+(3, 'Dr. Alejandro Gómez', 3);
+
+-- 3. Usuarios del Sistema
+INSERT INTO `usuariosistema` (`idUsuario`, `usuario`, `hashCredencial`, `idRol`, `nombreCompleto`) VALUES
+(1, 'admin_user', '$2b$12$eImiTxKlC9M9aumn4W28.uQf9pafYz1Zym', 1, 'Santiago Administrador'),
+(2, 'clara_recepcion', '$2b$12$tG7uHn9kLpM2zWqXvY3r.eFvBcDeFgHiJk', 2, 'Clara Inés López');
+
+-- 4. Horarios y Franjas Horarias para los Médicos
+INSERT INTO `horariomedico` (`idHorario`, `idMedico`, `diaSemana`, `horaInicio`, `horaFin`, `estadoDisponibilidad`) VALUES
+(1, 1, 'Lunes', '08:00:00', '12:00:00', 'Activo'),
+(2, 2, 'Martes', '14:00:00', '18:00:00', 'Activo');
+
+INSERT INTO `franjahoraria` (`idFranja`, `idMedico`, `idConsultorio`, `fecha`, `horaInicio`, `horaFin`, `idEstadoFranja`) VALUES
+(1, 1, 1, '2026-06-01', '08:00:00', '08:30:00', 2), -- Asignada a la cita de prueba
+(2, 1, 1, '2026-06-01', '08:30:00', '09:00:00', 1), -- Disponible
+(3, 2, 2, '2026-06-02', '14:00:00', '14:30:00', 1); -- Disponible
+
+-- 5. Pacientes y Titulares (Responsables)
+INSERT INTO `paciente` (`idPaciente`, `nombre`, `documento`, `contacto`) VALUES
+(1, 'Juan Camilo Pérez', '1002345678', 'juan.perez@email.com'),
+(2, 'Sofía Valentina Castro', '1193456789', 'sofia.castro@email.com');
+
+INSERT INTO `titular` (`idTitular`, `nombre`, `documento`, `contacto`) VALUES
+(1, 'María Consuelo Pérez', '42123456', '3157654321');
+
+-- Relación si el paciente es menor de edad o depende de un titular
+INSERT INTO `pacientetitular` (`idPaciente`, `idTitular`, `tipoRelacion`) VALUES
+(1, 1, 'Madre');
+
+-- 6. Flujo de Operaciones (Citas, Notificaciones y Auditoría)
+INSERT INTO `cita` (`idCita`, `idPaciente`, `idMedico`, `idFranja`, `fechaCreacion`, `fechaProgramada`, `idEstadoCita`, `motivo`) VALUES
+(1, 1, 1, 1, '2026-05-25 10:30:00', '2026-06-01 08:00:00', 1, 'Control anual de rutina');
+
+INSERT INTO `notificacion` (`idNotif`, `idCita`, `idTipoNotif`, `idCanal`, `fechaProgramada`, `estadoEnvio`, `reintentos`) VALUES
+(1, 1, 2, 1, '2026-05-25 10:35:00', 'Enviado', 0),
+(2, 1, 1, 2, '2026-05-31 08:00:00', 'Pendiente', 0);
+
+INSERT INTO `auditoria` (`idAud`, `idUsuario`, `idCita`, `fechaHora`, `idTipoAccion`, `comentario`) VALUES
+(1, 2, 1, '2026-05-25 10:30:00', 1, 'Cita asignada correctamente por la recepcionista.');
+
+-- Confirmar todas las inserciones
+COMMIT;
